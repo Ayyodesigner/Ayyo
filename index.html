@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <title>金羽冲刺 手机版</title>
+    <meta name="description" content="手机版金羽冲刺：点击大按钮跳跃、滑铲、冲刺，收集金羽穿过山道。" />
+    <meta name="theme-color" content="#1cc9c2" />
+    <meta property="og:title" content="金羽冲刺" />
+    <meta property="og:description" content="手机竖屏游玩，跳过图腾石像，收集金羽冲向更远的山道。" />
+    <meta property="og:image" content="./assets/share-cover.png" />
+    <meta property="og:type" content="website" />
+    <link rel="stylesheet" href="./styles.css?v=mobile-totem-ground-1" />
+  </head>
+  <body>
+    <main class="game-shell" aria-label="金羽冲刺小游戏">
+      <section class="stage" aria-label="游戏舞台">
+        <canvas id="game" width="1280" height="720" aria-label="金羽冲刺画面"></canvas>
+
+        <div class="hud" aria-live="polite">
+          <div class="brand">
+            <span class="crest"></span>
+            <div>
+              <h1>金羽冲刺</h1>
+              <p>Golden Feather Dash</p>
+            </div>
+          </div>
+          <div class="stats">
+            <span>分数 <strong id="score">0</strong></span>
+            <span>金羽 <strong id="feathers">0</strong></span>
+            <span>最佳 <strong id="best">0</strong></span>
+          </div>
+          <div class="energy" aria-label="冲刺能量">
+            <span id="energyFill"></span>
+          </div>
+        </div>
+
+        <div class="panel" id="panel">
+          <p class="kicker">侦察兵任务</p>
+          <h2 id="panelTitle">收集金羽，穿过山道</h2>
+          <p id="panelText">收集特殊金羽，拾取磁铁和护盾，点「跳 / 滑 / 冲」穿过山道。</p>
+          <div class="actions">
+            <button id="startButton" type="button">开始</button>
+            <button id="restartButton" type="button">重新开始</button>
+          </div>
+        </div>
+
+        <div class="controls" aria-label="操作提示">
+          <span>空格 / 点击：二段跳</span>
+          <span>↓ / S：滑行</span>
+          <span>Shift：冲刺</span>
+          <span>P：暂停</span>
+        </div>
+
+        <div class="touch-controls" aria-label="手机触控">
+          <button id="touchJump" class="touch-button jump" type="button">跳</button>
+          <button id="touchSlide" class="touch-button slide" type="button">滑</button>
+          <button id="touchDash" class="touch-button dash" type="button" aria-disabled="true">冲</button>
+          <button id="touchPause" class="touch-button pause" type="button">停</button>
+        </div>
+      </section>
+    </main>
+    <script src="./game.js?v=mobile-totem-ground-1"></script>
+  </body>
+</html>
