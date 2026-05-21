@@ -27,17 +27,17 @@ const ROWS = {
 };
 
 const sprite = new Image();
-sprite.src = "./assets/golden-scout-spritesheet.webp?v=mobile-totem-ground-1";
+sprite.src = "./assets/golden-scout-spritesheet.webp?v=mobile-creatures-1";
 const slideSprite = new Image();
-slideSprite.src = "./assets/slide-sequence.png?v=mobile-totem-ground-1";
+slideSprite.src = "./assets/slide-sequence.png?v=mobile-creatures-1";
 const sceneImage = new Image();
 sceneImage.src = "./assets/scene-background.png?v=scene-bg-1";
 const groundImage = new Image();
 groundImage.src = "./assets/grass-platform.png?v=grass-clean-3";
 const totemLowImage = new Image();
-totemLowImage.src = "./assets/totem-low.png?v=mobile-totem-ground-1";
+totemLowImage.src = "./assets/totem-low.png?v=mobile-creatures-1";
 const totemHighImage = new Image();
-totemHighImage.src = "./assets/totem-high.png?v=mobile-totem-ground-1";
+totemHighImage.src = "./assets/totem-high.png?v=mobile-creatures-1";
 
 const SCENE_SURFACE_Y = 762;
 const GROUND_SURFACE_OFFSET = 78;
@@ -230,17 +230,58 @@ function setDucking(value) {
 }
 
 function spawnObstacle() {
-  const type = game.score > 260 && Math.random() > 0.52 ? "totemHigh" : "totemLow";
-  const h = (type === "totemHigh" ? 260 : 112) * spriteScale;
-  const w = h * (type === "totemHigh" ? 290 / 627 : 270 / 370);
-  game.obstacles.push({
-    type,
-    x: canvas.clientWidth + 60,
-    y: groundY - h,
-    w,
-    h,
-    passed: false,
-  });
+  const progress = game.score;
+  const roll = Math.random();
+  let obstacle;
+  if (progress > 980 && roll > 0.82) {
+    const h = 50 * spriteScale;
+    const w = 78 * spriteScale;
+    const baseY = groundY - rand(150, 215) * spriteScale;
+    obstacle = {
+      type: "bat",
+      x: canvas.clientWidth + 60,
+      y: baseY,
+      baseY,
+      w,
+      h,
+      fly: rand(0, Math.PI * 2),
+      flySpeed: rand(4.2, 5.4),
+    };
+  } else if (progress > 620 && roll > 0.62) {
+    const h = 48 * spriteScale;
+    obstacle = {
+      type: "slime",
+      x: canvas.clientWidth + 60,
+      y: groundY - h,
+      w: 70 * spriteScale,
+      h,
+      bounce: rand(0, Math.PI * 2),
+      bounceSpeed: rand(5.4, 6.8),
+      bounceAmp: rand(18, 30) * spriteScale,
+    };
+  } else {
+    const type = progress > 260 && roll > 0.52 ? "totemHigh" : "totemLow";
+    const h = (type === "totemHigh" ? 260 : 112) * spriteScale;
+    obstacle = {
+      type,
+      x: canvas.clientWidth + 60,
+      y: groundY - h,
+      w: h * (type === "totemHigh" ? 290 / 627 : 270 / 370),
+      h,
+    };
+  }
+  obstacle.passed = false;
+  game.obstacles.push(obstacle);
+}
+
+function nextObstacleDelay() {
+  const progress = Math.min(1, game.score / 2600);
+  const speedFactor = Math.min(1.65, game.speed / 470);
+  const roll = Math.random();
+  let delay = rand(0.95, 1.42);
+  if (roll < 0.2 + progress * 0.12) delay = rand(0.62, 0.9);
+  else if (roll > 0.72 - progress * 0.08) delay = rand(1.48, 2.05);
+  return delay / speedFactor;
 }
 
 function spawnFeather() {
@@ -342,7 +383,7 @@ function update(dt) {
   powerupTimer -= dt;
   if (spawnTimer <= 0) {
     spawnObstacle();
-    spawnTimer = rand(0.9, 1.45) / Math.min(1.5, game.speed / 470);
+    spawnTimer = nextObstacleDelay();
   }
   if (featherTimer <= 0) {
     spawnFeather();
@@ -355,14 +396,38 @@ function update(dt) {
 
   for (const obstacle of game.obstacles) {
     obstacle.x -= currentSpeed * dt;
-    const insetX = (obstacle.type === "totemHigh" ? 14 : 10) * spriteScale;
-    const groundPad = totemGroundPad(obstacle);
-    const hitBox = {
-      x: obstacle.x + insetX,
-      y: obstacle.y + groundPad + 10 * spriteScale,
-      w: obstacle.w - insetX * 2,
-      h: obstacle.h - groundPad - 12 * spriteScale,
-    };
+    if (obstacle.type === "slime") {
+      obstacle.bounce += dt * obstacle.bounceSpeed;
+      obstacle.y = groundY - obstacle.h - Math.abs(Math.sin(obstacle.bounce)) * obstacle.bounceAmp;
+    } else if (obstacle.type === "bat") {
+      obstacle.fly += dt * obstacle.flySpeed;
+      obstacle.y = obstacle.baseY + Math.sin(obstacle.fly) * 8 * spriteScale;
+    }
+    let hitBox;
+    if (obstacle.type === "slime") {
+      hitBox = {
+        x: obstacle.x + 10 * spriteScale,
+        y: obstacle.y + 10 * spriteScale,
+        w: obstacle.w - 20 * spriteScale,
+        h: obstacle.h - 12 * spriteScale,
+      };
+    } else if (obstacle.type === "bat") {
+      hitBox = {
+        x: obstacle.x + 12 * spriteScale,
+        y: obstacle.y + 12 * spriteScale,
+        w: obstacle.w - 24 * spriteScale,
+        h: obstacle.h - 20 * spriteScale,
+      };
+    } else {
+      const insetX = (obstacle.type === "totemHigh" ? 14 : 10) * spriteScale;
+      const groundPad = totemGroundPad(obstacle);
+      hitBox = {
+        x: obstacle.x + insetX,
+        y: obstacle.y + groundPad + 10 * spriteScale,
+        w: obstacle.w - insetX * 2,
+        h: obstacle.h - groundPad - 12 * spriteScale,
+      };
+    }
     const playerBox = {
       x: p.x + 24 * spriteScale,
       y: p.y + (p.ducking ? 22 : 20) * spriteScale,
@@ -586,6 +651,14 @@ function drawHills(w, h, speed, color, baseY) {
 }
 
 function drawObstacle(obstacle) {
+  if (obstacle.type === "slime") {
+    drawSlime(obstacle);
+    return;
+  }
+  if (obstacle.type === "bat") {
+    drawBat(obstacle);
+    return;
+  }
   ctx.save();
   ctx.fillStyle = "rgba(21, 31, 49, 0.2)";
   ctx.beginPath();
@@ -611,6 +684,73 @@ function drawObstacle(obstacle) {
     ctx.fillStyle = "#e66d51";
     ctx.fillRect(8 * spriteScale, obstacle.h * 0.48, obstacle.w - 16 * spriteScale, 10 * spriteScale);
   }
+  ctx.restore();
+}
+
+function drawSlime(obstacle) {
+  const bottom = obstacle.y + obstacle.h;
+  const grounded = Math.max(0, 1 - (groundY - bottom) / (28 * spriteScale));
+  const squash = 1 + grounded * 0.16;
+  ctx.save();
+  ctx.fillStyle = "rgba(21, 31, 49, 0.18)";
+  ctx.beginPath();
+  ctx.ellipse(obstacle.x + obstacle.w * 0.5, groundY + 4 * spriteScale, obstacle.w * 0.42, 6 * spriteScale, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.translate(obstacle.x + obstacle.w * 0.5, obstacle.y + obstacle.h * 0.56);
+  ctx.scale(squash, 1 / squash);
+  ctx.fillStyle = "#47d66f";
+  ctx.beginPath();
+  ctx.ellipse(0, 0, obstacle.w * 0.45, obstacle.h * 0.42, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#8effa8";
+  ctx.beginPath();
+  ctx.ellipse(-obstacle.w * 0.18, -obstacle.h * 0.16, obstacle.w * 0.13, obstacle.h * 0.1, -0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#17301f";
+  ctx.beginPath();
+  ctx.arc(-obstacle.w * 0.12, -obstacle.h * 0.04, 3.8 * spriteScale, 0, Math.PI * 2);
+  ctx.arc(obstacle.w * 0.14, -obstacle.h * 0.04, 3.8 * spriteScale, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#17301f";
+  ctx.lineWidth = 2 * spriteScale;
+  ctx.beginPath();
+  ctx.arc(0, obstacle.h * 0.07, 9 * spriteScale, 0.12 * Math.PI, 0.88 * Math.PI);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawBat(obstacle) {
+  const flap = Math.sin(obstacle.fly) * 0.35;
+  const cx = obstacle.x + obstacle.w * 0.5;
+  const cy = obstacle.y + obstacle.h * 0.5;
+  ctx.save();
+  ctx.fillStyle = "rgba(21, 31, 49, 0.16)";
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + obstacle.h * 0.52, obstacle.w * 0.32, 4 * spriteScale, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#32224f";
+  ctx.beginPath();
+  ctx.moveTo(cx - obstacle.w * 0.16, cy - obstacle.h * 0.08);
+  ctx.quadraticCurveTo(cx - obstacle.w * 0.5, cy - obstacle.h * (0.5 + flap), cx - obstacle.w * 0.55, cy + obstacle.h * 0.18);
+  ctx.quadraticCurveTo(cx - obstacle.w * 0.33, cy + obstacle.h * 0.04, cx - obstacle.w * 0.16, cy + obstacle.h * 0.18);
+  ctx.closePath();
+  ctx.moveTo(cx + obstacle.w * 0.16, cy - obstacle.h * 0.08);
+  ctx.quadraticCurveTo(cx + obstacle.w * 0.5, cy - obstacle.h * (0.5 + flap), cx + obstacle.w * 0.55, cy + obstacle.h * 0.18);
+  ctx.quadraticCurveTo(cx + obstacle.w * 0.33, cy + obstacle.h * 0.04, cx + obstacle.w * 0.16, cy + obstacle.h * 0.18);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#211735";
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, obstacle.w * 0.2, obstacle.h * 0.34, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffd95a";
+  ctx.beginPath();
+  ctx.arc(cx, cy - obstacle.h * 0.05, 8 * spriteScale, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#17101f";
+  ctx.beginPath();
+  ctx.arc(cx, cy - obstacle.h * 0.05, 3.6 * spriteScale, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 

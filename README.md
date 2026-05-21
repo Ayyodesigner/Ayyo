@@ -9,4 +9,4 @@
 
 测试或分享时建议使用版本参数：
 
-https://你的域名/金羽冲刺手机版/?v=mobile-totem-ground-1
+https://你的域名/金羽冲刺手机版/?v=mobile-creatures-1
